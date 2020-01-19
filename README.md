@@ -1,4 +1,4 @@
-# Cisco Cloud Operations Bot (CCOB)
+# Cisco Cloud Operations Bot (COB)
 
 Building on our FY19Q4 submission, Merakisight, we wanted to expand the reach of our original platform to integrate with Cisco's ever-growing number of cloud offerings. The initial aim of Merakisight was to allow our users from IT Admins to C-level positions to gain quick insight into the status of their IT assets. With our new project, Cisco Cloud Operations Bot we plan to bring health information from Cisco's security products such Cisco Defense Orchestrator and Cisco Umbrella into a single Webex Team's chatbot to addon to the existing monitoring of Intersight and Meraki.
 

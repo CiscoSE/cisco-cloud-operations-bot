@@ -1,11 +1,14 @@
+import base64
 from dotenv import load_dotenv
+import io 
+import json
+import matplotlib.pyplot as plt
 import meraki
 import os
 import requests
+import sys
 from webexteamsbot import TeamsBot
 from webexteamsbot.models import Response
-import sys
-import json
 
 load_dotenv()
 
@@ -18,6 +21,7 @@ meraki_api_key = os.getenv("MERAKI_API_KEY")
 umbrella_management_key = os.getenv("UMBRELLA_MANAGEMENT_KEY")
 umbrella_management_secret = os.getenv("UMBRELLA_MANAGEMENT_SECRET")
 umbrella_org_id = os.getenv("UMBRELLA_ORG_ID")
+image_upload_url = os.getenv("IMAGE_UPLOAD_URL")
 
 # Create a Bot Object
 bot = TeamsBot(
@@ -70,8 +74,35 @@ def get_meraki_org_networks():
     return [(network["name"], network["id"]) for network in networks]
 
 
-def get_meraki_network_traffic():
-    dashboard = None
+def get_meraki_network_traffic(network_id):
+    dashboard = meraki.DashboardAPI(meraki_api_key)
+    network_traffic = dashboard.networks.getNetworkTraffic(network_id, timespan=86400)
+    destinations_and_totals = {}
+    for entry in network_traffic:
+        if entry["application"] == "Miscellaneous web" or entry["application"] == "Miscellaneous secure web":
+            if any(c.isalpha() for c in entry["destination"]):
+                if entry["destination"] not in destinations_and_totals:
+                    destinations_and_totals[entry["destination"]] = entry["sent"] + entry["recv"]
+                else:
+                    destinations_and_totals[entry["destination"]] = destinations_and_totals[entry["destination"]] + entry["sent"] + entry["recv"]
+    network_traffic_desc = sorted(destinations_and_totals.items(), key=lambda x: x[1], reverse=True)
+    return network_traffic_desc
+
+
+def generate_network_traffic_chart(network_traffic_desc):
+    top10_dests = network_traffic_desc[:10]
+    labels = [dest[0] for dest in top10_dests]
+    values = [dest[1] for dest in top10_dests]
+    plt.switch_backend('agg')
+    patches, texts = plt.pie(values, startangle=90)
+    plt.legend(patches, labels, bbox_to_anchor=(1,0.5), loc="center right", fontsize=10, bbox_transform=plt.gcf().transFigure)
+    plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
+    # # Set aspect ratio to be equal so that pie is drawn as a circle.
+    # plt.axis('equal')
+    # plt.tight_layout()
+    # plt.show()
+    plt.savefig('network_traffic.png')
+    return "network_traffic.png"
 
 
 # This function generates a basic adaptive card and sends it to the user
@@ -238,6 +269,8 @@ def show_meraki_networks_card(roomId):
 # put it inside of the "content" below, otherwise Webex won't understand
 # what you send it.
 def show_meraki_traffic_card(roomId, network_id):
+    network_traffic_desc = get_meraki_network_traffic(network_id)
+    image_name = generate_network_traffic_chart(network_traffic_desc)
     attachment = '''
     {
         "contentType": "application/vnd.microsoft.card.adaptive",
@@ -260,14 +293,9 @@ def show_meraki_traffic_card(roomId, network_id):
                                     "size": "Medium"
                                 },
                                 {
-                                    "type": "TextBlock",
-                                    "text": "v.redd.it - 85010",
-                                    "wrap": true
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "text": "twitch.tv - 6000",
-                                    "wrap": true
+                                    "type": "Image",
+                                    "url": "''' + image_upload_url + image_name + '''",
+                                    "size": "auto"
                                 }
                             ]
                         }
@@ -279,7 +307,7 @@ def show_meraki_traffic_card(roomId, network_id):
     '''
     backupmessage = "This is an example using Adaptive Cards."
 
-    c = create_message_with_attachment(incoming_msg.roomId,
+    c = create_message_with_attachment(roomId,
                                        msgtxt=backupmessage,
                                        attachment=json.loads(attachment))
     print(c)

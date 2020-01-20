@@ -67,7 +67,7 @@ def add_domain_to_destination_list(domain, destination_list):
 
 
 def get_meraki_org_networks():
-    dashboard = meraki.DashboardAPI(meraki_api_key)
+    dashboard = meraki.DashboardAPI(meraki_api_key, output_log=False)
     orgs = dashboard.organizations.getOrganizations()
     org = orgs[0]["id"]
     networks = dashboard.networks.getOrganizationNetworks(org)
@@ -75,7 +75,7 @@ def get_meraki_org_networks():
 
 
 def get_meraki_network_traffic(network_id):
-    dashboard = meraki.DashboardAPI(meraki_api_key)
+    dashboard = meraki.DashboardAPI(meraki_api_key, output_log=False)
     network_traffic = dashboard.networks.getNetworkTraffic(network_id, timespan=86400)
     destinations_and_totals = {}
     for entry in network_traffic:

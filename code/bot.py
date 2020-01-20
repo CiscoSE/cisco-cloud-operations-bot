@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import meraki
 import os
 import requests
 from webexteamsbot import TeamsBot
@@ -13,6 +14,7 @@ bot_email = os.getenv("COB_BOT_EMAIL")
 teams_token = os.getenv("COB_BOT_TOKEN")
 bot_url = os.getenv("COB_BOT_URL")
 bot_app_name = os.getenv("COB_BOT_APP_NAME")
+meraki_api_key = os.getenv("MERAKI_API_KEY")
 umbrella_management_key = os.getenv("UMBRELLA_MANAGEMENT_KEY")
 umbrella_management_secret = os.getenv("UMBRELLA_MANAGEMENT_SECRET")
 umbrella_org_id = os.getenv("UMBRELLA_ORG_ID")
@@ -41,19 +43,6 @@ def greeting(incoming_msg):
     return response
 
 
-# Create functions that will be linked to bot commands to add capabilities
-# ------------------------------------------------------------------------
-
-# A simple command that returns a basic string that will be sent as a reply
-def do_something(incoming_msg):
-    """
-    Sample function to do some action.
-    :param incoming_msg: The incoming message object from Teams
-    :return: A text or markdown based reply
-    """
-    return "i did what you said - {}".format(incoming_msg.text)
-
-
 def get_umbrella_destination_lists():
     r = requests.get(
         'https://management.api.umbrella.com/v1/organizations/{}/destinationlists'.format(umbrella_org_id), 
@@ -73,6 +62,18 @@ def add_domain_to_destination_list(domain, destination_list):
     return r.status_code
 
 
+def get_meraki_org_networks():
+    dashboard = meraki.DashboardAPI(meraki_api_key)
+    orgs = dashboard.organizations.getOrganizations()
+    org = orgs[0]["id"]
+    networks = dashboard.networks.getOrganizationNetworks(org)
+    return [(network["name"], network["id"]) for network in networks]
+
+
+def get_meraki_network_traffic():
+    dashboard = None
+
+
 # This function generates a basic adaptive card and sends it to the user
 # You can use Microsofts Adaptive Card designer here:
 # https://adaptivecards.io/designer/. The formatting that Webex Teams
@@ -80,7 +81,7 @@ def add_domain_to_destination_list(domain, destination_list):
 # make sure to take the data that comes out of the MS card designer and
 # put it inside of the "content" below, otherwise Webex won't understand
 # what you send it.
-def show_card(incoming_msg):
+def show_operations_card(incoming_msg):
     attachment = '''
     {
         "contentType": "application/vnd.microsoft.card.adaptive",
@@ -103,6 +104,13 @@ def show_card(incoming_msg):
                                     "size": "Medium"
                                 },
                                 {
+                                    "type": "Input.Text",
+                                    "placeholder": "Placeholder text",
+                                    "isVisible": false,
+                                    "id": "card_type",
+                                    "value": "choose_operation"
+                                },
+                                {
                                     "type": "TextBlock",
                                     "text": "Select an operation to perform across your Cisco cloud-based products.",
                                     "isSubtle": true,
@@ -115,7 +123,7 @@ def show_card(incoming_msg):
                                     "choices": [
                                         {
                                             "title": "View Meraki Traffic",
-                                            "value": "meraki_traffic_analytics"
+                                            "value": "meraki_network_traffic"
                                         },
                                         {
                                             "title": "Add Umbrella Domain Policy",
@@ -132,6 +140,138 @@ def show_card(incoming_msg):
                 {
                     "type": "Action.Submit",
                     "title": "Submit"
+                }
+            ]
+        }
+    }
+    '''
+    backupmessage = "This is an example using Adaptive Cards."
+
+    c = create_message_with_attachment(incoming_msg.roomId,
+                                       msgtxt=backupmessage,
+                                       attachment=json.loads(attachment))
+    print(c)
+    return ""
+
+
+def show_meraki_networks_card(roomId):
+    attachment_start = '''
+    {
+        "contentType": "application/vnd.microsoft.card.adaptive",
+        "content": {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.0",
+            "body": [
+                {
+                    "type": "ColumnSet",
+                    "columns": [
+                        {
+                            "type": "Column",
+                            "width": 2,
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Choose a Network",
+                                    "weight": "Bolder",
+                                    "size": "Medium"
+                                },
+                                {
+                                    "type": "Input.Text",
+                                    "placeholder": "Placeholder text",
+                                    "isVisible": false,
+                                    "id": "card_type",
+                                    "value": "meraki_choose_network"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "size": "Small",
+                                    "text": "Network"
+                                },
+                                {
+                                    "type": "Input.ChoiceSet",
+                                    "id": "network_id",
+                                    "placeholder": "Choose an organization network...",
+                                    "choices": [
+    '''
+    attachment_insert = ''''''
+    networks = get_meraki_org_networks()
+    for network in networks:
+        attachment_insert += '''
+        {
+            "title": "''' + str(network[0]) + '''",
+            "value": "''' + str(network[1]) + '''"
+        },
+        '''
+    attachement_end = '''
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "actions": [
+                {
+                    "type": "Action.Submit",
+                    "title": "Submit"
+                }
+            ]
+        }
+    }
+    '''
+    attachment = attachment_start + attachment_insert.rsplit(',', 1)[0] + attachement_end
+    backupmessage = "This is an example using Adaptive Cards."
+
+    c = create_message_with_attachment(roomId,
+                                       msgtxt=backupmessage,
+                                       attachment=json.loads(attachment))
+    print(c)
+    return ""
+
+
+# This function generates a basic adaptive card and sends it to the user
+# You can use Microsofts Adaptive Card designer here:
+# https://adaptivecards.io/designer/. The formatting that Webex Teams
+# uses isn't the same, but this still helps with the overall layout
+# make sure to take the data that comes out of the MS card designer and
+# put it inside of the "content" below, otherwise Webex won't understand
+# what you send it.
+def show_meraki_traffic_card(roomId, network_id):
+    attachment = '''
+    {
+        "contentType": "application/vnd.microsoft.card.adaptive",
+        "content": {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.0",
+            "body": [
+                {
+                    "type": "ColumnSet",
+                    "columns": [
+                        {
+                            "type": "Column",
+                            "width": 2,
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Top Network Traffic Destinations",
+                                    "weight": "Bolder",
+                                    "size": "Medium"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "v.redd.it - 85010",
+                                    "wrap": true
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "twitch.tv - 6000",
+                                    "wrap": true
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         }
@@ -180,6 +320,13 @@ def show_umbrella_destination_card(roomId):
                                     "text": "Enter a domain to add to an existing destination list.",
                                     "isSubtle": true,
                                     "wrap": true
+                                },
+                                {
+                                    "type": "Input.Text",
+                                    "placeholder": "Placeholder text",
+                                    "isVisible": false,
+                                    "id": "card_type",
+                                    "value": "umbrella_destination"
                                 },
                                 {
                                     "type": "TextBlock",
@@ -247,11 +394,14 @@ def handle_cards(api, incoming_msg):
     :return: A text or markdown based reply
     """
     m = get_attachment_actions(incoming_msg["data"]["id"])
-    if "operation" in m["inputs"]:
+    card_type = m["inputs"]["card_type"]
+    if card_type == "choose_operation":
         selected_operation = m["inputs"]["operation"]
         if selected_operation == "umbrella_destination":
             show_umbrella_destination_card(incoming_msg["data"]["roomId"])
-    elif "domain" in m["inputs"] and "destination_list" in m["inputs"]:
+        elif selected_operation == "meraki_network_traffic":
+            show_meraki_networks_card(incoming_msg["data"]["roomId"])
+    elif card_type == "umbrella_destination":
         domain = m["inputs"]["domain"]
         destination_list = m["inputs"]["destination_list"]
         status_code = add_domain_to_destination_list(domain, destination_list)
@@ -259,6 +409,9 @@ def handle_cards(api, incoming_msg):
             return "Destination added successfully!"
         else:
             return "Error occurred during destination submission."
+    elif card_type == "meraki_choose_network":
+        network_id = m["inputs"]["network_id"]
+        show_meraki_traffic_card(incoming_msg["data"]["roomId"], network_id)
 
     # return "card input was - {}".format(m["inputs"])
 
@@ -360,8 +513,7 @@ bot.set_greeting(greeting)
 
 # Add new commands to the bot.
 bot.add_command('attachmentActions', '*', handle_cards)
-bot.add_command("/showcard", "show an adaptive card", show_card)
-bot.add_command("/dosomething", "help for do something", do_something)
+bot.add_command("/operations", "Show Cloud Operations", show_operations_card)
 bot.add_command(
     "/demo", "Sample that creates a Teams message to be returned.", ret_message
 )

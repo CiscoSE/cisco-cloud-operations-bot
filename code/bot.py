@@ -22,6 +22,7 @@ umbrella_management_key = os.getenv("UMBRELLA_MANAGEMENT_KEY")
 umbrella_management_secret = os.getenv("UMBRELLA_MANAGEMENT_SECRET")
 umbrella_org_id = os.getenv("UMBRELLA_ORG_ID")
 image_upload_url = os.getenv("IMAGE_UPLOAD_URL")
+media_path = os.getenv("MEDIA_PATH")
 
 # Create a Bot Object
 bot = TeamsBot(
@@ -101,7 +102,7 @@ def generate_network_traffic_chart(network_traffic_desc):
     # plt.axis('equal')
     # plt.tight_layout()
     # plt.show()
-    plt.savefig('network_traffic.png')
+    plt.savefig(media_path + 'network_traffic.png')
     return "network_traffic.png"
 
 

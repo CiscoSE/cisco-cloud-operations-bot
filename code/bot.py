@@ -187,7 +187,7 @@ def show_operations_card(incoming_msg):
 
 
 def show_meraki_networks_card_demo(roomId):
-    attachment_start = '''
+    attachment = '''
     {
         "contentType": "application/vnd.microsoft.card.adaptive",
         "content": {
@@ -253,7 +253,6 @@ def show_meraki_networks_card_demo(roomId):
         }
     }
     '''
-    attachment = attachment_start + attachment_insert.rsplit(',', 1)[0] + attachement_end
     backupmessage = "This is an example using Adaptive Cards."
 
     c = create_message_with_attachment(roomId,

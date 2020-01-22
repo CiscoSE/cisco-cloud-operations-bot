@@ -621,10 +621,10 @@ bot.set_greeting(greeting)
 # Add new commands to the bot.
 bot.add_command('attachmentActions', '*', handle_cards)
 bot.add_command("/operations", "Show Cloud Operations", show_operations_card)
-bot.add_command(
-    "/demo", "Sample that creates a Teams message to be returned.", ret_message
-)
-bot.add_command("/time", current_time_help, current_time)
+# bot.add_command(
+#     "/demo", "Sample that creates a Teams message to be returned.", ret_message
+# )
+# bot.add_command("/time", current_time_help, current_time)
 
 # Every bot includes a default "/echo" command.  You can remove it, or any
 # other command with the remove_command(command) method.

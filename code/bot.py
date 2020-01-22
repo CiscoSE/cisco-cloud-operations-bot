@@ -186,6 +186,83 @@ def show_operations_card(incoming_msg):
     return ""
 
 
+def show_meraki_networks_card_demo(roomId):
+    attachment_start = '''
+    {
+        "contentType": "application/vnd.microsoft.card.adaptive",
+        "content": {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.0",
+            "body": [
+                {
+                    "type": "ColumnSet",
+                    "columns": [
+                        {
+                            "type": "Column",
+                            "width": 2,
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Choose a Network",
+                                    "weight": "Bolder",
+                                    "size": "Medium"
+                                },
+                                {
+                                    "type": "Input.Text",
+                                    "placeholder": "Placeholder text",
+                                    "isVisible": false,
+                                    "id": "card_type",
+                                    "value": "meraki_choose_network"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "size": "Small",
+                                    "text": "Network"
+                                },
+                                {
+                                    "type": "Input.ChoiceSet",
+                                    "id": "network_id",
+                                    "placeholder": "Choose an organization network...",
+                                    "choices": [
+                                        {
+                                            "title": "Chicago - HQ",
+                                            "value": "dummy1"
+                                        },
+                                        {
+                                            "title": "Orlando - Branch",
+                                            "value": "dummy2"
+                                        },
+                                        {
+                                            "title": "New York - DC",
+                                            "value": "dummy3"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "actions": [
+                {
+                    "type": "Action.Submit",
+                    "title": "Submit"
+                }
+            ]
+        }
+    }
+    '''
+    attachment = attachment_start + attachment_insert.rsplit(',', 1)[0] + attachement_end
+    backupmessage = "This is an example using Adaptive Cards."
+
+    c = create_message_with_attachment(roomId,
+                                       msgtxt=backupmessage,
+                                       attachment=json.loads(attachment))
+    print(c)
+    return ""
+
+
 def show_meraki_networks_card(roomId):
     attachment_start = '''
     {
@@ -440,7 +517,8 @@ def handle_cards(api, incoming_msg):
             return "Error occurred during destination submission."
     elif card_type == "meraki_choose_network":
         network_id = m["inputs"]["network_id"]
-        show_meraki_traffic_card(incoming_msg["data"]["roomId"], network_id)
+        # show_meraki_traffic_card(incoming_msg["data"]["roomId"], network_id)
+        show_meraki_traffic_card(incoming_msg["data"]["roomId"], "L_575334852396581790")
 
     # return "card input was - {}".format(m["inputs"])
 

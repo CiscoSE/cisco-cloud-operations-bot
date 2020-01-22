@@ -425,8 +425,7 @@ def handle_cards(api, incoming_msg):
         if selected_operation == "umbrella_destination":
             show_umbrella_destination_card(incoming_msg["data"]["roomId"])
         elif selected_operation == "meraki_network_traffic":
-            # show_meraki_networks_card(incoming_msg["data"]["roomId"])
-            show_meraki_networks_card_demo(incoming_msg["data"]["roomId"])
+            show_meraki_networks_card(incoming_msg["data"]["roomId"])
     elif card_type == "umbrella_destination":
         domain = m["inputs"]["domain"]
         destination_list = m["inputs"]["destination_list"]

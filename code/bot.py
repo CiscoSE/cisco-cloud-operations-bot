@@ -98,10 +98,6 @@ def generate_network_traffic_chart(network_traffic_desc):
     patches, texts = plt.pie(values, startangle=90)
     plt.legend(patches, labels, bbox_to_anchor=(1,0.5), loc="center right", fontsize=10, bbox_transform=plt.gcf().transFigure)
     plt.subplots_adjust(left=0.0, bottom=0.1, right=0.55)
-    # # Set aspect ratio to be equal so that pie is drawn as a circle.
-    # plt.axis('equal')
-    # plt.tight_layout()
-    # plt.show()
     plt.savefig(media_path + 'network_traffic.png')
     return "network_traffic.png"
 
@@ -180,82 +176,6 @@ def show_operations_card(incoming_msg):
     backupmessage = "This is an example using Adaptive Cards."
 
     c = create_message_with_attachment(incoming_msg.roomId,
-                                       msgtxt=backupmessage,
-                                       attachment=json.loads(attachment))
-    print(c)
-    return ""
-
-
-def show_meraki_networks_card_demo(roomId):
-    attachment = '''
-    {
-        "contentType": "application/vnd.microsoft.card.adaptive",
-        "content": {
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "type": "AdaptiveCard",
-            "version": "1.0",
-            "body": [
-                {
-                    "type": "ColumnSet",
-                    "columns": [
-                        {
-                            "type": "Column",
-                            "width": 2,
-                            "items": [
-                                {
-                                    "type": "TextBlock",
-                                    "text": "Choose a Network",
-                                    "weight": "Bolder",
-                                    "size": "Medium"
-                                },
-                                {
-                                    "type": "Input.Text",
-                                    "placeholder": "Placeholder text",
-                                    "isVisible": false,
-                                    "id": "card_type",
-                                    "value": "meraki_choose_network"
-                                },
-                                {
-                                    "type": "TextBlock",
-                                    "size": "Small",
-                                    "text": "Network"
-                                },
-                                {
-                                    "type": "Input.ChoiceSet",
-                                    "id": "network_id",
-                                    "placeholder": "Choose an organization network...",
-                                    "choices": [
-                                        {
-                                            "title": "Chicago - HQ",
-                                            "value": "dummy1"
-                                        },
-                                        {
-                                            "title": "Orlando - Branch",
-                                            "value": "dummy2"
-                                        },
-                                        {
-                                            "title": "New York - DC",
-                                            "value": "dummy3"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ],
-            "actions": [
-                {
-                    "type": "Action.Submit",
-                    "title": "Submit"
-                }
-            ]
-        }
-    }
-    '''
-    backupmessage = "This is an example using Adaptive Cards."
-
-    c = create_message_with_attachment(roomId,
                                        msgtxt=backupmessage,
                                        attachment=json.loads(attachment))
     print(c)
@@ -517,10 +437,7 @@ def handle_cards(api, incoming_msg):
             return "Error occurred during destination submission."
     elif card_type == "meraki_choose_network":
         network_id = m["inputs"]["network_id"]
-        # show_meraki_traffic_card(incoming_msg["data"]["roomId"], network_id)
-        show_meraki_traffic_card(incoming_msg["data"]["roomId"], "L_575334852396581790")
-
-    # return "card input was - {}".format(m["inputs"])
+        show_meraki_traffic_card(incoming_msg["data"]["roomId"], network_id)
 
 
 # Temporary function to send a message with a card attachment (not yet
@@ -574,57 +491,12 @@ def ret_message(incoming_msg):
     return response
 
 
-# An example command the illustrates using details from incoming message within
-# the command processing.
-def current_time(incoming_msg):
-    """
-    Sample function that returns the current time for a provided timezone
-    :param incoming_msg: The incoming message object from Teams
-    :return: A Response object based reply
-    """
-    # Extract the message content, without the command "/time"
-    timezone = bot.extract_message("/time", incoming_msg.text).strip()
-
-    # Craft REST API URL to retrieve current time
-    #   Using API from http://worldclockapi.com
-    u = "http://worldclockapi.com/api/json/{timezone}/now".format(
-        timezone=timezone
-    )
-    r = requests.get(u).json()
-
-    # If an invalid timezone is provided, the serviceResponse will include
-    # error message
-    if r["serviceResponse"]:
-        return "Error: " + r["serviceResponse"]
-
-    # Format of returned data is "YYYY-MM-DDTHH:MM<OFFSET>"
-    #   Example "2018-11-11T22:09-05:00"
-    returned_data = r["currentDateTime"].split("T")
-    cur_date = returned_data[0]
-    cur_time = returned_data[1][:5]
-    timezone_name = r["timeZoneName"]
-
-    # Craft a reply string.
-    reply = "In {TZ} it is currently {TIME} on {DATE}.".format(
-        TZ=timezone_name, TIME=cur_time, DATE=cur_date
-    )
-    return reply
-
-
-# Create help message for current_time command
-current_time_help = "Look up the current time for a given timezone. "
-current_time_help += "_Example: **/time EST**_"
-
 # Set the bot greeting.
 bot.set_greeting(greeting)
 
 # Add new commands to the bot.
 bot.add_command('attachmentActions', '*', handle_cards)
 bot.add_command("/operations", "Show Cloud Operations", show_operations_card)
-# bot.add_command(
-#     "/demo", "Sample that creates a Teams message to be returned.", ret_message
-# )
-# bot.add_command("/time", current_time_help, current_time)
 
 # Every bot includes a default "/echo" command.  You can remove it, or any
 # other command with the remove_command(command) method.

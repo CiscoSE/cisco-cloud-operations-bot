@@ -1,5 +1,8 @@
 # Cisco Cloud Operations Bot (COB)
 
+[![Demo Video](http://img.youtube.com/vi/cuO646ZzgQM/0.jpg)](http://www.youtube.com/watch?v=cuO646ZzgQM "Cloud Operations Bot")
+
+
 For the FY20Q2 ASIC challenge, we wanted to explore and interact with our ever-growing cloud offerings. Cloud Operations Bot was created to show how Cisco's cloud offerings - with their API-driven designs - can be interfaced without even accessing the various dashboards that exists. For this submission, our focus was to prove the ease of interoperability between Webex Teams, Meraki Dashboard, and Umbrella. We were specifically excited to work with the newest addition to Webex Teams: Adaptive Cards.
 
 
